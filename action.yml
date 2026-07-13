@@ -121,6 +121,13 @@ runs:
           curl -fsSL --retry 3 --retry-delay 2 \
             "https://github.com/convox/convox/releases/download/${CONVOX_VERSION}/convox-linux" \
             -o "$DEST/convox.tmp"
+          EXPECTED_SHA=$(cat "$GITHUB_ACTION_PATH/CONVOX_SHA256")
+          ACTUAL_SHA=$(sha256sum "$DEST/convox.tmp" | awk '{print $1}')
+          if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+            echo "::error::convox CLI checksum mismatch (expected $EXPECTED_SHA, got $ACTUAL_SHA)"
+            rm -f "$DEST/convox.tmp"
+            exit 1
+          fi
           chmod 755 "$DEST/convox.tmp"
           mv "$DEST/convox.tmp" "$DEST/convox"
         fi
