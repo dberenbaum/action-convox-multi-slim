@@ -8,6 +8,7 @@ stub_convox() {
   export CONVOX_CALLS="$STUB_BIN_DIR/calls.log"
   {
     echo '#!/bin/sh'
+    # shellcheck disable=SC2016  # literal text written into the generated stub
     echo 'echo "$@" >> "$CONVOX_CALLS"'
     printf '%s\n' "$1"
   } > "$STUB_BIN_DIR/convox"
