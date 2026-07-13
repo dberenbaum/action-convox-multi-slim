@@ -108,7 +108,6 @@ exit 1'
   grep -q "BUILD=BAAAAAAAAA" "$GITHUB_OUTPUT"
 }
 
-# characterization: plan 005 changes this to warn on no match
 @test "find-build writes an empty output and exits 0 when nothing matches" {
   stub_builds_table
   export INPUT_APP="my-app"
@@ -119,6 +118,30 @@ exit 1'
 
   [ "$status" -eq 0 ]
   grep -q "^BUILD=$" "$GITHUB_OUTPUT"
+  [[ "$output" == *"::warning::No build found"* ]]
+}
+
+stub_builds_table_with_regex_chars() {
+  stub_convox '
+if [ "$1" = "builds" ]; then
+  echo "ID          STATUS    RELEASE      STARTED     ELAPSED  DESCRIPTION"
+  echo "BAAAAAAAAA  complete  RAAAAAAAAA   1 hour ago  2m       Deploy 1x2y3"
+  echo "BBBBBBBBBB  complete  RBBBBBBBBB   2 hours ago 2m       Deploy 1.2.3"
+  exit 0
+fi
+exit 1'
+}
+
+@test "find-build matches description literally, not as a regex" {
+  stub_builds_table_with_regex_chars
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="Deploy 1.2.3"
+
+  run sh entrypoint-find-build.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "BUILD=BBBBBBBBBB" "$GITHUB_OUTPUT"
 }
 
 @test "find-build fails when no description is available" {
@@ -186,7 +209,6 @@ exit 1'
   grep -q "RELEASE=RAAAAAAAAA" "$GITHUB_OUTPUT"
 }
 
-# characterization: plan 005 changes this to warn on no match
 @test "find-release writes an empty output and exits 0 when nothing matches" {
   stub_releases_table
   export INPUT_APP="my-app"
@@ -197,6 +219,30 @@ exit 1'
 
   [ "$status" -eq 0 ]
   grep -q "^RELEASE=$" "$GITHUB_OUTPUT"
+  [[ "$output" == *"::warning::No release found"* ]]
+}
+
+stub_releases_table_with_regex_chars() {
+  stub_convox '
+if [ "$1" = "releases" ]; then
+  echo "ID          STATUS    BUILD        CREATED     DESCRIPTION"
+  echo "RAAAAAAAAA  complete  BAAAAAAAAA   1 hour ago  Deploy 1x2y3"
+  echo "RBBBBBBBBB  complete  BBBBBBBBBB   2 hours ago Deploy 1.2.3"
+  exit 0
+fi
+exit 1'
+}
+
+@test "find-release matches description literally, not as a regex" {
+  stub_releases_table_with_regex_chars
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="Deploy 1.2.3"
+
+  run sh entrypoint-find-release.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "RELEASE=RBBBBBBBBB" "$GITHUB_OUTPUT"
 }
 
 @test "find-release fails when no description is available" {
@@ -298,4 +344,44 @@ exit 1'
   run sh entrypoint-run.sh
 
   [ "$status" -eq 7 ]
+}
+
+# ---------------------------------------------------------------------------
+# entrypoint-build-migrate.sh
+# ---------------------------------------------------------------------------
+
+stub_migrate_builds_table() {
+  stub_convox '
+case "$1 $2" in
+  "builds export")
+    echo "RNEWRELEASE"
+    exit 0
+    ;;
+  "builds import")
+    cat > /dev/null
+    echo "RNEWRELEASE"
+    exit 0
+    ;;
+esac
+if [ "$1" = "builds" ]; then
+  echo "ID          STATUS    RELEASE      STARTED     ELAPSED  DESCRIPTION"
+  echo "BAAAAAAAAA  failed    RAAAAAAAAA   1 hour ago  2m       almost complete"
+  echo "BBBBBBBBBB  complete  RBBBBBBBBB   2 hours ago 2m       Build two"
+  exit 0
+fi
+exit 1'
+}
+
+@test "build-migrate selects the build whose status column is complete" {
+  stub_migrate_builds_table
+  export INPUT_APP="my-app"
+  export INPUT_DESTINATIONAPP="my-app-dest"
+  export INPUT_DESTINATIONRACK="dest-rack"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-build-migrate.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "builds export BBBBBBBBBB" "$CONVOX_CALLS"
+  grep -q "RELEASE=RNEWRELEASE" "$GITHUB_OUTPUT"
 }

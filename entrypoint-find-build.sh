@@ -15,6 +15,10 @@ if [ -z "$DESCRIPTION" ]; then
 fi
 
 echo "Finding first build with description '$DESCRIPTION' for $INPUT_APP on $CONVOX_RACK"
-build=$(convox builds --app "$INPUT_APP" --limit 100 | grep "$DESCRIPTION" | awk 'NR==1 {print $1}')
+build=$(convox builds --app "$INPUT_APP" --limit 100 | grep -F -- "$DESCRIPTION" | awk 'NR==1 {print $1}')
+
+if [ -z "$build" ]; then
+  echo "::warning::No build found matching description '$DESCRIPTION' for $INPUT_APP (searched last 100 builds)"
+fi
 
 write_output "BUILD" "$build"

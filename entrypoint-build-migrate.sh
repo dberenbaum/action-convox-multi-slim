@@ -10,7 +10,7 @@ set_rack
 
 echo "Migrating $INPUT_APP from $CONVOX_RACK to $INPUT_DESTINATIONAPP on $INPUT_DESTINATIONRACK"
 
-build=$(convox builds --app "$INPUT_APP" | grep complete | awk 'NR==1{print $1}')
+build=$(convox builds --app "$INPUT_APP" | awk '$2 == "complete" {print $1; exit}')
 
 if [ -z "$build" ]; then
   echo "::error::No completed build found for $INPUT_APP"
