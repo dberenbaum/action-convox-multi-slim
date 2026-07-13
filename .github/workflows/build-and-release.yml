@@ -44,6 +44,7 @@ jobs:
           fi
 
       - name: Commit version bump and tag
+        id: commit
         run: |
           VERSION="${{ inputs.version }}"
           git config user.name "github-actions[bot]"
@@ -55,10 +56,13 @@ jobs:
           if [ -n "${{ inputs.convox-sha256 }}" ]; then
             git add CONVOX_SHA256
           fi
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "released=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git commit -m "${{ inputs.commit-message }}"
-          git tag "$VERSION" -m "$VERSION"
-          git push origin main --tags
+          echo "released=true" >> "$GITHUB_OUTPUT"
 
       - name: Update major version alias tag
         run: |
