@@ -329,6 +329,8 @@ make release
 
 Releases automatically re-point the `v3` major tag, so pin `@v3` for automatic updates or an exact tag such as `@v3.0.10` for immutability.
 
+Merged pull requests only release automatically when labelled `release`; unlabelled merges don't bump the version.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development details.
 
 ## License

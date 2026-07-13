@@ -83,6 +83,10 @@ bats tests/
 
 ## Releasing
 
+Merged PRs only trigger a release when labelled `release` (a minor version bump). The daily Convox auto-update workflow patch-bumps the version on its own schedule.
+
+For a manual release:
+
 ```sh
 export VERSION=v1.x.x
 make release
@@ -92,6 +96,7 @@ This will:
 1. Check Docker daemon and Docker Hub login
 2. Update version references in `action.yml` and `Dockerfile`
 3. Commit, build/push Docker image, create signed git tag, push
+4. Refuse to move an already-published exact version tag, but re-point the `v3` major alias to the new tag
 
 ## Pull Requests
 
