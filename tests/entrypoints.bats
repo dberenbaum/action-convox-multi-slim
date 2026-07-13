@@ -224,3 +224,78 @@ exit 1'
   [ "$status" -eq 0 ]
   grep -q "RELEASE=RAAAAAAAAA" "$GITHUB_OUTPUT"
 }
+
+# ---------------------------------------------------------------------------
+# entrypoint-run.sh (plan 004: command passed as a single argv element)
+# ---------------------------------------------------------------------------
+
+@test "run: command with single quotes survives intact" {
+  stub_convox 'exit 0'
+  stub_script
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_SERVICE="web"
+  export INPUT_COMMAND="echo 'it's done'"
+
+  run sh entrypoint-run.sh
+
+  [ "$status" -eq 0 ]
+  grep -F "it's done" "$CONVOX_CALLS"
+}
+
+@test "run: injection payload stays inert" {
+  stub_convox 'exit 0'
+  stub_script
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_SERVICE="web"
+  export INPUT_COMMAND="x\"; touch $BATS_TEST_TMPDIR/pwned; echo \""
+
+  run sh entrypoint-run.sh
+
+  [ "$status" -eq 0 ]
+  grep -F "touch $BATS_TEST_TMPDIR/pwned" "$CONVOX_CALLS"
+  [ ! -e "$BATS_TEST_TMPDIR/pwned" ]
+}
+
+@test "run: includes --release when INPUT_RELEASE is set" {
+  stub_convox 'exit 0'
+  stub_script
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_SERVICE="web"
+  export INPUT_COMMAND="ls"
+  export INPUT_RELEASE="R123"
+
+  run sh entrypoint-run.sh
+
+  [ "$status" -eq 0 ]
+  grep -q -- "--release R123" "$CONVOX_CALLS"
+}
+
+@test "run: omits --release when INPUT_RELEASE is not set" {
+  stub_convox 'exit 0'
+  stub_script
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_SERVICE="web"
+  export INPUT_COMMAND="ls"
+
+  run sh entrypoint-run.sh
+
+  [ "$status" -eq 0 ]
+  ! grep -q -- "--release" "$CONVOX_CALLS"
+}
+
+@test "run: propagates convox's exit code" {
+  stub_convox 'exit 7'
+  stub_script
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_SERVICE="web"
+  export INPUT_COMMAND="ls"
+
+  run sh entrypoint-run.sh
+
+  [ "$status" -eq 7 ]
+}

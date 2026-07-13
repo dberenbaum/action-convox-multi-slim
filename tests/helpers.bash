@@ -20,3 +20,14 @@ teardown_stub_convox() {
     rm -rf "$STUB_BIN_DIR"
   fi
 }
+
+# stub_script — fake util-linux `script` that just runs the -c command string.
+# Mirrors `script -qec "cmd" /dev/null` argv: $1=-qec $2=cmd $3=/dev/null
+stub_script() {
+  cat > "$STUB_BIN_DIR/script" <<'EOF'
+#!/bin/sh
+sh -c "$2"
+exit $?
+EOF
+  chmod +x "$STUB_BIN_DIR/script"
+}
