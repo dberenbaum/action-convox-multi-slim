@@ -464,3 +464,33 @@ exit 1'
   grep -q -- "--no-cache" "$CONVOX_CALLS"
   grep -q -- "--external" "$CONVOX_CALLS"
 }
+
+# ---------------------------------------------------------------------------
+# GITHUB_OUTPUT / GITHUB_ENV channel split (plan 009)
+# ---------------------------------------------------------------------------
+
+@test "find-release: RELEASE reaches both GITHUB_OUTPUT and GITHUB_ENV (promote auto-detect survives)" {
+  stub_releases_table
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="Build two"
+
+  run sh entrypoint-find-release.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "RELEASE=" "$GITHUB_OUTPUT"
+  grep -q "RELEASE=" "$GITHUB_ENV"
+}
+
+@test "find-build: BUILD does not leak into GITHUB_ENV" {
+  stub_builds_table
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="Build two"
+
+  run sh entrypoint-find-build.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "BUILD=" "$GITHUB_OUTPUT"
+  ! grep -q "BUILD=" "$GITHUB_ENV"
+}

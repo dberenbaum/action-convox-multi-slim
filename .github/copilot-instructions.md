@@ -26,7 +26,7 @@ action.yml             — GitHub Action interface definition (inputs/outputs); 
    ```
 3. Validate required inputs using `require_input "INPUT_NAME" "$INPUT_NAME"`
 4. Call `set_rack` if the action needs `CONVOX_RACK`
-5. Use `write_output "KEY" "$value"` to set outputs (writes to both `$GITHUB_OUTPUT` and `$GITHUB_ENV`)
+5. Use `write_output "KEY" "$value"` to set outputs (writes to `$GITHUB_OUTPUT` only); use `persist_env "KEY" "$value"` if a later step must read the value from the environment (currently only `RELEASE`)
 6. Add the case entry in `entrypoint.sh`
 7. Add the action name to the `action` input's description list in `action.yml`
 8. Add any new inputs/outputs to `action.yml`
@@ -49,7 +49,8 @@ action.yml             — GitHub Action interface definition (inputs/outputs); 
 | `set_host` | Exports `CONVOX_HOST` from `INPUT_HOST` or default |
 | `set_password` | Exports `CONVOX_PASSWORD` from `INPUT_PASSWORD` |
 | `require_input NAME VALUE` | Fails with error if value is empty |
-| `write_output KEY VALUE` | Writes to both `$GITHUB_OUTPUT` and `$GITHUB_ENV` |
+| `write_output KEY VALUE` | Writes to `$GITHUB_OUTPUT` only |
+| `persist_env KEY VALUE` | Persists to `$GITHUB_ENV` for later steps (use only for values later steps read, e.g. `RELEASE`) |
 | `build_cache_flag` | Returns `--no-cache` if `INPUT_CACHED=false` |
 | `build_external_flag` | Returns `--external` if `INPUT_EXTERNAL=true` |
 | `build_manifest_flag` | Returns `-m <path>` if `INPUT_MANIFEST` is set |

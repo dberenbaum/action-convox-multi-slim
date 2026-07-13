@@ -55,14 +55,24 @@ require_input() {
 }
 
 # ---------------------------------------------------------------------------
-# write_output — Write a key=value pair to both GITHUB_OUTPUT and GITHUB_ENV
+# write_output — Write a key=value pair to GITHUB_OUTPUT
 #   Usage: write_output "RELEASE" "$release"
 # ---------------------------------------------------------------------------
 write_output() {
   _wo_key="$1"
   _wo_value="$2"
   echo "${_wo_key}=${_wo_value}" >> "$GITHUB_OUTPUT"
-  echo "${_wo_key}=${_wo_value}" >> "$GITHUB_ENV"
+}
+
+# ---------------------------------------------------------------------------
+# persist_env — Persist a key=value pair to GITHUB_ENV for later steps.
+#   Only use for values later steps genuinely read (currently: RELEASE).
+#   Usage: persist_env "RELEASE" "$release"
+# ---------------------------------------------------------------------------
+persist_env() {
+  _pe_key="$1"
+  _pe_value="$2"
+  echo "${_pe_key}=${_pe_value}" >> "$GITHUB_ENV"
 }
 
 # ---------------------------------------------------------------------------

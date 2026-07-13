@@ -23,3 +23,4 @@ if [ -z "$release" ]; then
 fi
 
 write_output "RELEASE" "$release"
+persist_env "RELEASE" "$release"

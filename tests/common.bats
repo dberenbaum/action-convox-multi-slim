@@ -96,9 +96,15 @@ teardown() {
   grep -q "RELEASE=R12345" "$GITHUB_OUTPUT"
 }
 
-@test "write_output writes to GITHUB_ENV" {
+@test "write_output does not write to GITHUB_ENV" {
   . lib/common.sh
   write_output "RELEASE" "R12345"
+  ! grep -q "RELEASE=R12345" "$GITHUB_ENV"
+}
+
+@test "persist_env writes to GITHUB_ENV" {
+  . lib/common.sh
+  persist_env "RELEASE" "R12345"
   grep -q "RELEASE=R12345" "$GITHUB_ENV"
 }
 

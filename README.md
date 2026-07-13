@@ -1,6 +1,6 @@
 # action-convox-multi-slim
 
-Multiple Convox CLI commands in one slim Docker-based GitHub Action. Instead of using separate actions for each Convox operation, this single action supports 17 commands through the `action` input, reducing workflow boilerplate.
+Multiple Convox CLI commands in one slim composite GitHub Action. Instead of using separate actions for each Convox operation, this single action supports 17 commands through the `action` input, reducing workflow boilerplate.
 
 ## Supported Actions
 
@@ -73,6 +73,8 @@ Multiple Convox CLI commands in one slim Docker-based GitHub Action. Instead of 
 | `PENDING_PROCESSES` | Count of pending processes | `get-scale` |
 | `UNHEALTHY_PROCESSES` | Count of unhealthy processes | `get-scale` |
 | `PARAM_VALUE` | Rack parameter value | `get-rack-param` |
+
+Outputs are available via `steps.<id>.outputs.<NAME>`; they are no longer exported as environment variables (v3.x behaviour change). The one exception is `RELEASE`, which is still exported to the environment so `promote` and `rollback` can auto-detect it from a prior `build` step.
 
 ## Action-by-Action Usage
 
