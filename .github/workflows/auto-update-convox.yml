@@ -15,6 +15,7 @@ jobs:
       update: ${{ steps.check.outputs.update }}
       version: ${{ steps.version.outputs.new_version }}
       convox_version: ${{ steps.convox.outputs.version }}
+      convox_sha256: ${{ steps.checksum.outputs.sha256 }}
     steps:
       - name: Get latest Convox release
         id: convox
@@ -26,6 +27,17 @@ jobs:
           fi
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
           echo "Latest Convox release: $LATEST"
+
+      - name: Compute checksum for new release
+        id: checksum
+        run: |
+          LATEST="${{ steps.convox.outputs.version }}"
+          SHA=$(curl -fsSL --retry 3 "https://github.com/convox/convox/releases/download/${LATEST}/convox-linux" | sha256sum | awk '{print $1}')
+          if ! echo "$SHA" | grep -qE '^[0-9a-f]{64}$'; then
+            echo "::error::Failed to compute checksum for convox ${LATEST}"
+            exit 1
+          fi
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,6 +80,7 @@ jobs:
       version: ${{ needs.check-and-update.outputs.version }}
       commit-message: "Auto-update Convox CLI to ${{ needs.check-and-update.outputs.convox_version }} (${{ needs.check-and-update.outputs.version }})"
       convox-version: ${{ needs.check-and-update.outputs.convox_version }}
+      convox-sha256: ${{ needs.check-and-update.outputs.convox_sha256 }}
 
   summary:
     needs: [check-and-update, release]

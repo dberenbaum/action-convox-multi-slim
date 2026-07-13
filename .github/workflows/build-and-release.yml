@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: ""
+      convox-sha256:
+        description: "If set, writes this value to CONVOX_SHA256 and stages it"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -34,6 +39,9 @@ jobs:
           if [ -n "${{ inputs.convox-version }}" ]; then
             echo "${{ inputs.convox-version }}" > CONVOX_VERSION
           fi
+          if [ -n "${{ inputs.convox-sha256 }}" ]; then
+            echo "${{ inputs.convox-sha256 }}" > CONVOX_SHA256
+          fi
 
       - name: Commit version bump and tag
         run: |
@@ -43,6 +51,9 @@ jobs:
           git add VERSION
           if [ -n "${{ inputs.convox-version }}" ]; then
             git add CONVOX_VERSION
+          fi
+          if [ -n "${{ inputs.convox-sha256 }}" ]; then
+            git add CONVOX_SHA256
           fi
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "${{ inputs.commit-message }}"
