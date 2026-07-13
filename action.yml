@@ -5,27 +5,11 @@ icon: cloud
 color: blue
 inputs:
   action:
-    description: Convox command to action
+    description: >-
+      Convox command to run. One of: build, build-migrate, create, deploy,
+      destroy, env-set, find-build, find-release, get-scale, get-rack-param,
+      login, login-user, promote, rack-param, rollback, run, scale
     required: true
-    type: choice
-    options:
-      - build
-      - build-migrate
-      - create
-      - deploy
-      - destroy
-      - env-set
-      - find-build
-      - find-release
-      - get-scale
-      - get-rack-param
-      - login
-      - login-user
-      - promote
-      - rack-param
-      - rollback
-      - run
-      - scale
   password:
     description: Convox deploy key value
   host:

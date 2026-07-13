@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a **Docker-based GitHub Action** that wraps the Convox CLI into a single reusable action supporting 16 different commands. It uses a dispatcher pattern where `entrypoint.sh` routes the `action` input to individual `entrypoint-{action}.sh` scripts.
+This is a **composite GitHub Action** that wraps the Convox CLI into a single reusable action supporting 17 different commands. It installs the Convox CLI directly on the runner (pinned via the `CONVOX_VERSION` and `CONVOX_SHA256` files, checksum-verified) and uses a dispatcher pattern where `entrypoint.sh` routes the `action` input to individual `entrypoint-{action}.sh` scripts.
 
 ## Architecture
 
@@ -10,8 +10,7 @@ This is a **Docker-based GitHub Action** that wraps the Convox CLI into a single
 entrypoint.sh          — Main dispatcher (case switch on INPUT_ACTION)
 lib/common.sh          — Shared utility functions (set_rack, write_output, etc.)
 entrypoint-{action}.sh — One script per supported Convox command
-action.yml             — GitHub Action interface definition (inputs/outputs)
-Dockerfile             — Container image based on Ubuntu 22.04 + Convox CLI
+action.yml             — GitHub Action interface definition (inputs/outputs); installs the pinned Convox CLI, then runs entrypoint.sh
 ```
 
 ## Key Conventions
@@ -23,13 +22,13 @@ Dockerfile             — Container image based on Ubuntu 22.04 + Convox CLI
    ```sh
    #!/bin/sh
    set -e
-   . /lib/common.sh
+   . "$(cd "$(dirname "$0")" && pwd)/lib/common.sh"
    ```
 3. Validate required inputs using `require_input "INPUT_NAME" "$INPUT_NAME"`
 4. Call `set_rack` if the action needs `CONVOX_RACK`
 5. Use `write_output "KEY" "$value"` to set outputs (writes to both `$GITHUB_OUTPUT` and `$GITHUB_ENV`)
 6. Add the case entry in `entrypoint.sh`
-7. Add the action name to the `options` list in `action.yml`
+7. Add the action name to the `action` input's description list in `action.yml`
 8. Add any new inputs/outputs to `action.yml`
 9. Update the README.md input/output tables and add a usage example
 
@@ -73,19 +72,20 @@ Dockerfile             — Container image based on Ubuntu 22.04 + Convox CLI
 | `scale` | `rack`, `app`, `service`, `count` | — | — |
 | `get-scale` | `rack`, `app`, `service` | — | `DESIRED`, `RUNNING`, `CPU`, `MEMORY`, `SCALING_EVENT`, `RUNNING_PROCESSES`, `PENDING_PROCESSES`, `UNHEALTHY_PROCESSES` |
 | `env-set` | `rack`, `app`, `env` | — | — |
+| `find-build` | `rack`, `app`, `description` | — | `BUILD` |
 | `find-release` | `rack`, `app`, `description` | — | `RELEASE` |
 | `get-rack-param` | `rack`, `paramName` | — | `PARAM_VALUE` |
 | `rack-param` | `rack`, `paramName`, `paramValue` | — | — |
 
-### Versioning
+### Versioning and releasing
 
-Versions are managed via the Makefile: `VERSION=v1.x.x make release`. This updates the Docker image tag in `action.yml` and the version label in `Dockerfile`, builds/pushes the image, and creates a signed git tag.
+Merged PRs release automatically when labelled `release` (a minor version bump), and a daily workflow auto-updates the Convox CLI version (a patch bump). For a manual release: `VERSION=v3.x.x make release`, which writes the `VERSION` file, commits, creates a signed git tag, pushes, and re-points the `v3` major alias.
 
 ### Testing
 
 Follow TDD (red/green/refactor): always write failing tests first, then implement the code to make them pass, then refactor if needed.
 
-Run ShellCheck locally: `shellcheck entrypoint*.sh lib/common.sh`
+Run ShellCheck locally: `shellcheck -x entrypoint*.sh lib/common.sh tests/helpers.bash`
 Run tests: `bats tests/`
 
 ### Security

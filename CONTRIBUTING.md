@@ -3,27 +3,29 @@
 ## Development Setup
 
 1. Clone the repository
-2. Ensure you have Docker installed and running
-3. Install [ShellCheck](https://www.shellcheck.net/) for linting: `brew install shellcheck`
-4. Install [BATS](https://github.com/bats-core/bats-core) for testing: `brew install bats-core`
-5. Install [hadolint](https://github.com/hadolint/hadolint) for Dockerfile linting: `brew install hadolint`
+2. Install [ShellCheck](https://www.shellcheck.net/) for linting: `brew install shellcheck`
+3. Install [BATS](https://github.com/bats-core/bats-core) for testing: `brew install bats-core`
 
 ## Project Structure
 
 ```
 ├── action.yml                  # GitHub Action definition (inputs, outputs, metadata)
-├── Dockerfile                  # Container image build (Ubuntu 22.04 + Convox CLI)
 ├── entrypoint.sh               # Main dispatcher — routes INPUT_ACTION to scripts
 ├── lib/
 │   └── common.sh               # Shared utility functions
-├── entrypoint-{action}.sh      # One script per supported action (16 total)
+├── entrypoint-{action}.sh      # One script per supported action (17 total)
 ├── tests/
-│   └── common.bats             # BATS tests for shared utilities
+│   ├── common.bats             # BATS tests for shared utilities
+│   ├── entrypoints.bats        # BATS tests for the dispatcher and action scripts
+│   └── helpers.bash            # Shared test helpers
 ├── .github/
 │   ├── copilot-instructions.md # AI agent guidance
 │   └── workflows/
-│       ├── ci.yml              # PR validation (ShellCheck, hadolint, tests)
-│       └── release.yml         # Tag-triggered GitHub Release
+│       ├── ci.yml                 # PR validation (ShellCheck, BATS tests)
+│       ├── release.yml            # Computes the next version when a merged PR carries the `release` label
+│       ├── release-on-tag.yml     # Creates the GitHub Release when any v* tag is pushed (covers `make release`)
+│       ├── build-and-release.yml  # Reusable workflow: bumps version, commits, tags, pushes, updates v3 alias
+│       └── auto-update-convox.yml # Daily check for a new Convox CLI version; calls build-and-release.yml
 ├── Makefile                    # Release automation
 └── README.md                   # User documentation
 ```
@@ -34,7 +36,7 @@
    ```sh
    #!/bin/sh
    set -e
-   . /lib/common.sh
+   . "$(cd "$(dirname "$0")" && pwd)/lib/common.sh"
 
    require_input "INPUT_APP" "$INPUT_APP"
    set_rack
@@ -46,15 +48,15 @@
 2. **Register in the dispatcher** — add a case in `entrypoint.sh`:
    ```sh
    "your-action")
-     /entrypoint-your-action.sh
+     "$ACTION_DIR/entrypoint-your-action.sh"
      ;;
    ```
 
-3. **Update `action.yml`** — add the action name to `inputs.action.options` and declare any new inputs/outputs.
+3. **Update `action.yml`** — add the action name to the `action` input's description list and declare any new inputs/outputs.
 
 4. **Update `README.md`** — add the action to the input/output tables and provide a usage example.
 
-5. **Write tests** — add BATS test cases in `tests/`.
+5. **Write tests** — add BATS test cases in `tests/`, including a routing smoke test in `tests/entrypoints.bats` that confirms the dispatcher calls the new script.
 
 ## Code Style
 
@@ -68,11 +70,7 @@
 ## Linting
 
 ```sh
-# Shell scripts
-shellcheck entrypoint*.sh lib/common.sh
-
-# Dockerfile
-hadolint Dockerfile
+shellcheck -x entrypoint*.sh lib/common.sh tests/helpers.bash
 ```
 
 ## Testing
@@ -88,19 +86,19 @@ Merged PRs only trigger a release when labelled `release` (a minor version bump)
 For a manual release:
 
 ```sh
-export VERSION=v1.x.x
+export VERSION=v3.x.x
 make release
 ```
 
 This will:
-1. Check Docker daemon and Docker Hub login
-2. Update version references in `action.yml` and `Dockerfile`
-3. Commit, build/push Docker image, create signed git tag, push
-4. Refuse to move an already-published exact version tag, but re-point the `v3` major alias to the new tag
+1. Write `VERSION` to the `VERSION` file and commit it
+2. Create a signed git tag for the exact version, refusing to move it if it already exists
+3. Push the branch and the new tag
+4. Re-point the `v3` major alias to the new tag (force-pushed)
 
 ## Pull Requests
 
-- All PRs must pass CI (ShellCheck, hadolint, BATS tests)
+- All PRs must pass CI (ShellCheck, BATS tests)
 - Keep one action per entrypoint file
 - Update documentation when changing inputs/outputs
 - Don't commit `.bak` files (they're in `.gitignore`)
