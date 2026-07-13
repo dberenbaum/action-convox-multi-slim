@@ -64,7 +64,19 @@ jobs:
           git commit -m "${{ inputs.commit-message }}"
           echo "released=true" >> "$GITHUB_OUTPUT"
 
+      - name: Push commit and tag
+        if: steps.commit.outputs.released == 'true'
+        run: |
+          VERSION="${{ inputs.version }}"
+          if ! git push origin main; then
+            git pull --rebase origin main
+            git push origin main
+          fi
+          git tag "$VERSION" -m "$VERSION"
+          git push origin "refs/tags/$VERSION"
+
       - name: Update major version alias tag
+        if: steps.commit.outputs.released == 'true'
         run: |
           VERSION="${{ inputs.version }}"
           if ! git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
@@ -76,6 +88,7 @@ jobs:
           git push origin "refs/tags/$MAJOR" --force
 
       - name: Create GitHub Release
+        if: steps.commit.outputs.released == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
