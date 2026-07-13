@@ -391,7 +391,9 @@ exit 1'
 # ---------------------------------------------------------------------------
 
 @test "env-set: legacy space-separated form sets multiple pairs" {
-  stub_convox 'exit 0'
+  # argc assertion proves A=1 and B=2 arrive as SEPARATE arguments — the
+  # flattened calls log alone cannot see argument boundaries.
+  stub_convox 'echo "argc=$#" >> "$CONVOX_CALLS"'
   export INPUT_APP="my-app"
   export INPUT_RACK="my-rack"
   export INPUT_ENV="A=1 B=2"
@@ -399,7 +401,9 @@ exit 1'
   run sh entrypoint-env-set.sh
 
   [ "$status" -eq 0 ]
-  grep -q "^env set -a my-app --rack my-rack A=1 B=2$" "$CONVOX_CALLS"
+  # argv is: env set -a my-app --rack my-rack A=1 B=2 = 8 args
+  grep -q "^argc=8$" "$CONVOX_CALLS"
+  grep -F -q "A=1 B=2" "$CONVOX_CALLS"
 }
 
 @test "env-set: newline-separated form keeps a spaced value as one argument" {

@@ -10,8 +10,9 @@ echo "Setting environment variables for app $INPUT_APP on $CONVOX_RACK"
 
 # Newline-separated pairs allow values containing spaces; the legacy
 # space-separated form still works for single-line input.
+nl=$(printf '\n_'); nl=${nl%_}
 case "$INPUT_ENV" in
-  *"$(printf '\n')"*)
+  *"$nl"*)
     old_ifs="$IFS"
     IFS="$(printf '\n_')"; IFS="${IFS%_}"   # IFS = newline only
     set -f
