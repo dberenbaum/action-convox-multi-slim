@@ -66,36 +66,6 @@ write_output() {
 }
 
 # ---------------------------------------------------------------------------
-# build_cache_flag — Return "--no-cache" if INPUT_CACHED is "false"
-#   Usage: cache_flag=$(build_cache_flag)
-# ---------------------------------------------------------------------------
-build_cache_flag() {
-  if [ "$INPUT_CACHED" = "false" ]; then
-    echo "--no-cache"
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# build_external_flag — Return "--external" if INPUT_EXTERNAL is "true"
-#   Usage: external_flag=$(build_external_flag)
-# ---------------------------------------------------------------------------
-build_external_flag() {
-  if [ "$INPUT_EXTERNAL" = "true" ]; then
-    echo "--external"
-  fi
-}
-
-# ---------------------------------------------------------------------------
-# build_manifest_flag — Return "-m <path>" if INPUT_MANIFEST is set
-#   Usage: manifest_flag=$(build_manifest_flag)
-# ---------------------------------------------------------------------------
-build_manifest_flag() {
-  if [ -n "$INPUT_MANIFEST" ]; then
-    echo "-m $INPUT_MANIFEST"
-  fi
-}
-
-# ---------------------------------------------------------------------------
 # resolve_release — Set RELEASE from INPUT_RELEASE if provided, otherwise
 #   use any RELEASE already in the environment (from a prior build step).
 #   Optionally require it if first argument is "required".

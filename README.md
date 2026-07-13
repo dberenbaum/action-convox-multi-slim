@@ -56,7 +56,7 @@ Multiple Convox CLI commands in one slim Docker-based GitHub Action. Instead of 
 | `service` | Service name | For `run`, `scale`, `get-scale` | — |
 | `command` | Command to run | For `run` | — |
 | `count` | Instance count to scale to | For `scale` | — |
-| `env` | Env vars as `key1=value1 key2=value2` | For `env-set` | — |
+| `env` | Env vars as `key1=value1 key2=value2`, or newline-separated pairs when values contain spaces | For `env-set` | — |
 
 ## Outputs
 

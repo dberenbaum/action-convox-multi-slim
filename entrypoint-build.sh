@@ -8,14 +8,12 @@ set_rack
 
 echo "Building $INPUT_APP on $CONVOX_RACK"
 
-# Build flag arguments
-CACHED_COMMAND=$(build_cache_flag)
-MANIFEST_COMMAND=$(build_manifest_flag)
-EXTERNAL_COMMAND=$(build_external_flag)
+set -- --app "$INPUT_APP" --description "$INPUT_DESCRIPTION" --id
+if [ "$INPUT_CACHED" = "false" ]; then set -- "$@" --no-cache; fi
+if [ -n "$INPUT_MANIFEST" ]; then set -- "$@" -m "$INPUT_MANIFEST"; fi
+if [ "$INPUT_EXTERNAL" = "true" ]; then set -- "$@" --external; fi
 
-# shellcheck disable=SC2086
-# CACHED_COMMAND/MANIFEST_COMMAND/EXTERNAL_COMMAND are intentionally word-split (may be empty)
-release=$(convox build --app "$INPUT_APP" --description "$INPUT_DESCRIPTION" --id $CACHED_COMMAND $MANIFEST_COMMAND $EXTERNAL_COMMAND)
+release=$(convox build "$@")
 
 if [ -z "$release" ]; then
   echo "::error::Build failed — convox build returned no release ID"

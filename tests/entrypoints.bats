@@ -385,3 +385,78 @@ exit 1'
   grep -q "builds export BBBBBBBBBB" "$CONVOX_CALLS"
   grep -q "RELEASE=RNEWRELEASE" "$GITHUB_OUTPUT"
 }
+
+# ---------------------------------------------------------------------------
+# entrypoint-env-set.sh / entrypoint-build.sh — space-safe arguments
+# ---------------------------------------------------------------------------
+
+@test "env-set: legacy space-separated form sets multiple pairs" {
+  stub_convox 'exit 0'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_ENV="A=1 B=2"
+
+  run sh entrypoint-env-set.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "^env set -a my-app --rack my-rack A=1 B=2$" "$CONVOX_CALLS"
+}
+
+@test "env-set: newline-separated form keeps a spaced value as one argument" {
+  # First line of CONVOX_CALLS is the flattened argv (from the stub's
+  # recording line); second line is this body's own "argc=$#" output.
+  stub_convox 'echo "argc=$#" >> "$CONVOX_CALLS"'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_ENV="$(printf 'A=1\nMSG=hello world')"
+
+  run sh entrypoint-env-set.sh
+
+  [ "$status" -eq 0 ]
+  # argv is: env set -a my-app --rack my-rack A=1 "MSG=hello world" = 8 args
+  grep -q "^argc=8$" "$CONVOX_CALLS"
+  grep -F -q "MSG=hello world" "$CONVOX_CALLS"
+}
+
+@test "env-set: glob characters in a value are passed literally" {
+  stub_convox 'exit 0'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_ENV='PATTERN=*'
+
+  run sh entrypoint-env-set.sh
+
+  [ "$status" -eq 0 ]
+  grep -F -q "PATTERN=*" "$CONVOX_CALLS"
+}
+
+@test "build: manifest path with a space reaches convox as one argument" {
+  # Stub echoes a release id so the script's empty-release check passes.
+  stub_convox 'echo "argc=$#" >> "$CONVOX_CALLS"; echo R123'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="test-desc"
+  export INPUT_MANIFEST="my dir/convox.yml"
+
+  run sh entrypoint-build.sh
+
+  [ "$status" -eq 0 ]
+  # argv is: build --app my-app --description test-desc --id -m "my dir/convox.yml" = 8 args
+  grep -q "^argc=8$" "$CONVOX_CALLS"
+  grep -F -q "my dir/convox.yml" "$CONVOX_CALLS"
+}
+
+@test "build: --no-cache and --external flags are appended when requested" {
+  stub_convox 'echo R123'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="test-desc"
+  export INPUT_CACHED="false"
+  export INPUT_EXTERNAL="true"
+
+  run sh entrypoint-build.sh
+
+  [ "$status" -eq 0 ]
+  grep -q -- "--no-cache" "$CONVOX_CALLS"
+  grep -q -- "--external" "$CONVOX_CALLS"
+}

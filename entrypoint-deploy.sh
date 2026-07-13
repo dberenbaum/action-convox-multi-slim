@@ -10,11 +10,9 @@ set_rack
 
 echo "Deploying $INPUT_APP to $CONVOX_RACK"
 
-# Build flag arguments
-CACHED_COMMAND=$(build_cache_flag)
-MANIFEST_COMMAND=$(build_manifest_flag)
-EXTERNAL_COMMAND=$(build_external_flag)
+set -- --app "$INPUT_APP" --description "$INPUT_DESCRIPTION"
+if [ "$INPUT_CACHED" = "false" ]; then set -- "$@" --no-cache; fi
+if [ -n "$INPUT_MANIFEST" ]; then set -- "$@" -m "$INPUT_MANIFEST"; fi
+if [ "$INPUT_EXTERNAL" = "true" ]; then set -- "$@" --external; fi
 
-# shellcheck disable=SC2086
-# CACHED_COMMAND/MANIFEST_COMMAND/EXTERNAL_COMMAND are intentionally word-split (may be empty)
-convox deploy --app "$INPUT_APP" --description "$INPUT_DESCRIPTION" $CACHED_COMMAND $MANIFEST_COMMAND $EXTERNAL_COMMAND --wait
+convox deploy "$@" --wait

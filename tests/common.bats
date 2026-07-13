@@ -103,60 +103,6 @@ teardown() {
 }
 
 # ---------------------------------------------------------------------------
-# build_cache_flag
-# ---------------------------------------------------------------------------
-
-@test "build_cache_flag returns --no-cache when cached is false" {
-  export INPUT_CACHED="false"
-  . lib/common.sh
-  result=$(build_cache_flag)
-  [ "$result" = "--no-cache" ]
-}
-
-@test "build_cache_flag returns empty when cached is true" {
-  export INPUT_CACHED="true"
-  . lib/common.sh
-  result=$(build_cache_flag)
-  [ -z "$result" ]
-}
-
-# ---------------------------------------------------------------------------
-# build_manifest_flag
-# ---------------------------------------------------------------------------
-
-@test "build_manifest_flag returns -m path when manifest is set" {
-  export INPUT_MANIFEST="custom/convox.yml"
-  . lib/common.sh
-  result=$(build_manifest_flag)
-  [ "$result" = "-m custom/convox.yml" ]
-}
-
-@test "build_manifest_flag returns empty when manifest is unset" {
-  export INPUT_MANIFEST=""
-  . lib/common.sh
-  result=$(build_manifest_flag)
-  [ -z "$result" ]
-}
-
-# ---------------------------------------------------------------------------
-# build_external_flag
-# ---------------------------------------------------------------------------
-
-@test "build_external_flag returns --external when external is true" {
-  export INPUT_EXTERNAL="true"
-  . lib/common.sh
-  result=$(build_external_flag)
-  [ "$result" = "--external" ]
-}
-
-@test "build_external_flag returns empty when external is false" {
-  export INPUT_EXTERNAL="false"
-  . lib/common.sh
-  result=$(build_external_flag)
-  [ -z "$result" ]
-}
-
-# ---------------------------------------------------------------------------
 # resolve_release
 # ---------------------------------------------------------------------------
 

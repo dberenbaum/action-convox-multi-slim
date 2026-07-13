@@ -57,7 +57,7 @@ inputs:
   count:
     description: The number of instances to scale to
   env:
-    description: Environment variables in the form 'key1=value1 key2=value2'
+    description: Environment variables in the form 'key1=value1 key2=value2', or newline-separated pairs when values contain spaces
 outputs:
   BUILD:
     description: Build ID of the build matching the description
