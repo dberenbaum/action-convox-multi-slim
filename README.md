@@ -10,13 +10,13 @@ Multiple Convox CLI commands in one slim Docker-based GitHub Action. Instead of 
 
 ```yaml
 # Step 1: Login to Convox (required before any other action)
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: login
     password: ${{ secrets.CONVOX_PASSWORD }}
 
 # Step 2: Build your app
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   id: build
   with:
     action: build
@@ -25,7 +25,7 @@ Multiple Convox CLI commands in one slim Docker-based GitHub Action. Instead of 
     description: "Build ${{ github.sha }}"
 
 # Step 3: Promote the release
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: promote
     rack: my-rack
@@ -81,7 +81,7 @@ Multiple Convox CLI commands in one slim Docker-based GitHub Action. Instead of 
 Stores Convox credentials for subsequent steps. Must be called before any other action.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: login
     password: ${{ secrets.CONVOX_PASSWORD }}
@@ -93,7 +93,7 @@ Stores Convox credentials for subsequent steps. Must be called before any other 
 Authenticates an interactive user via token.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: login-user
     token: ${{ secrets.CONVOX_TOKEN }}
@@ -104,7 +104,7 @@ Authenticates an interactive user via token.
 Builds the app and returns the release ID.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   id: build
   with:
     action: build
@@ -121,7 +121,7 @@ Builds the app and returns the release ID.
 Builds and deploys in a single operation (waits for completion).
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: deploy
     rack: my-rack
@@ -135,7 +135,7 @@ Builds and deploys in a single operation (waits for completion).
 Exports a build from one app/rack and imports it to another.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: build-migrate
     rack: source-rack
@@ -149,7 +149,7 @@ Exports a build from one app/rack and imports it to another.
 Creates a new Convox app.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: create
     rack: my-rack
@@ -161,7 +161,7 @@ Creates a new Convox app.
 Deletes a Convox app.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: destroy
     rack: my-rack
@@ -173,7 +173,7 @@ Deletes a Convox app.
 Promotes a release to active.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: promote
     rack: my-rack
@@ -186,7 +186,7 @@ Promotes a release to active.
 Rolls back to a previous release.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: rollback
     rack: my-rack
@@ -199,7 +199,7 @@ Rolls back to a previous release.
 Runs a one-off command against a service.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: run
     rack: my-rack
@@ -214,7 +214,7 @@ Runs a one-off command against a service.
 Scales a service to a specific instance count.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: scale
     rack: my-rack
@@ -230,7 +230,7 @@ Retrieves current scale information and process status.
 By default, `get-scale` reports process counts even when there are zero running processes. Set `errorOnZeroScale: true` to make the step fail when `RUNNING_PROCESSES=0`.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   id: scale-info
   with:
     action: get-scale
@@ -250,7 +250,7 @@ By default, `get-scale` reports process counts even when there are zero running 
 Sets environment variables on an app.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: env-set
     rack: my-rack
@@ -263,7 +263,7 @@ Sets environment variables on an app.
 Finds the first build matching a description.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   id: found
   with:
     action: find-build
@@ -277,7 +277,7 @@ Finds the first build matching a description.
 Finds the first release matching a description.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   id: found
   with:
     action: find-release
@@ -291,7 +291,7 @@ Finds the first release matching a description.
 Retrieves a rack parameter value.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   id: param
   with:
     action: get-rack-param
@@ -306,7 +306,7 @@ Retrieves a rack parameter value.
 Sets a rack parameter value.
 
 ```yaml
-- uses: beastawakens/action-convox-multi-slim@v1
+- uses: beastawakens/action-convox-multi-slim@v3
   with:
     action: rack-param
     rack: my-rack
@@ -326,6 +326,8 @@ Sets a rack parameter value.
 export VERSION=v1.x.x
 make release
 ```
+
+Releases automatically re-point the `v3` major tag, so pin `@v3` for automatic updates or an exact tag such as `@v3.0.10` for immutability.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development details.
 

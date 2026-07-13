@@ -49,6 +49,17 @@ jobs:
           git tag "$VERSION" -m "$VERSION"
           git push origin main --tags
 
+      - name: Update major version alias tag
+        run: |
+          VERSION="${{ inputs.version }}"
+          if ! git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "Tag $VERSION was not created; skipping major alias update"
+            exit 0
+          fi
+          MAJOR="${VERSION%%.*}"
+          git tag -f "$MAJOR" "$VERSION"
+          git push origin "refs/tags/$MAJOR" --force
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
