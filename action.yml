@@ -153,3 +153,5 @@ runs:
         INPUT_COMMAND: ${{ inputs.command }}
         INPUT_COUNT: ${{ inputs.count }}
         INPUT_ENV: ${{ inputs.env }}
+        INPUT_EXCLUDE: ${{ inputs.exclude }}
+        INPUT_PARAMS: ${{ inputs.params }}
