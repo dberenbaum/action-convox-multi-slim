@@ -4,7 +4,7 @@ Multiple Convox CLI commands in one slim composite GitHub Action. Instead of usi
 
 ## Supported Actions
 
-`login` · `login-user` · `build` · `build-migrate` · `deploy` · `create` · `destroy` · `promote` · `rollback` · `run` · `scale` · `get-scale` · `env-set` · `find-build` · `find-release` · `get-rack-param` · `rack-param`
+`login` · `login-user` · `build` · `build-migrate` · `deploy` · `create` · `destroy` · `promote` · `rollback` · `run` · `scale` · `get-scale` · `env-set` · `env-copy` · `app-param` · `find-build` · `find-release` · `get-rack-param` · `rack-param`
 
 ## Quick Start
 
@@ -52,6 +52,8 @@ Multiple Convox CLI commands in one slim composite GitHub Action. Instead of usi
 | `manifest` | Custom path for convox.yml | No | — |
 | `paramName` | Rack parameter name | For `get-rack-param`, `rack-param` | — |
 | `paramValue` | Rack parameter value | For `rack-param` | — |
+| `params` | App params as `Key1=value1 Key2=value2`, or newline-separated pairs when values contain spaces | For `app-param` | — |
+| `exclude` | Env var names to omit when copying (space- or newline-separated) | No (`env-copy`) | — |
 | `release` | Release ID (auto-detected from prior build step if omitted) | For `promote`, `rollback` | — |
 | `service` | Service name | For `run`, `scale`, `get-scale` | — |
 | `command` | Command to run | For `run` | — |
@@ -73,6 +75,8 @@ Multiple Convox CLI commands in one slim composite GitHub Action. Instead of usi
 | `PENDING_PROCESSES` | Count of pending processes | `get-scale` |
 | `UNHEALTHY_PROCESSES` | Count of unhealthy processes | `get-scale` |
 | `PARAM_VALUE` | Rack parameter value | `get-rack-param` |
+| `CREATED` | `true` if the app was created by this step, `false` if it already existed | `create` |
+| `DESTROYED` | `true` if the app was deleted by this step, `false` if it did not exist | `destroy` |
 
 Outputs are available via `steps.<id>.outputs.<NAME>`; they are no longer exported as environment variables (v3.x behaviour change). The one exception is `RELEASE`, which is still exported to the environment so `promote` and `rollback` can auto-detect it from a prior `build` step.
 
@@ -148,19 +152,26 @@ Exports a build from one app/rack and imports it to another.
 
 ### create
 
-Creates a new Convox app.
+Creates a Convox app. Idempotent — if the app already exists the step is a
+no-op. The `CREATED` output is `true` only when this step created the app, so
+you can run one-time setup (such as `app-param`) only on first creation.
 
 ```yaml
 - uses: beastawakens/action-convox-multi-slim@v3
+  id: create
   with:
     action: create
     rack: my-rack
     app: my-new-app
+
+- if: steps.create.outputs.CREATED == 'true'
+  run: echo "First deploy — app was just created"
 ```
 
 ### destroy
 
-Deletes a Convox app.
+Deletes a Convox app. Idempotent — if the app does not exist the step is a
+no-op. The `DESTROYED` output reflects whether a deletion actually happened.
 
 ```yaml
 - uses: beastawakens/action-convox-multi-slim@v3
@@ -168,6 +179,36 @@ Deletes a Convox app.
     action: destroy
     rack: my-rack
     app: my-app
+```
+
+### app-param
+
+Sets one or more app parameters (for example build resources).
+
+```yaml
+- uses: beastawakens/action-convox-multi-slim@v3
+  with:
+    action: app-param
+    rack: my-rack
+    app: my-app
+    params: "BuildCpu=2000 BuildMem=4096"
+```
+
+### env-copy
+
+Copies the environment of one app onto another, optionally excluding keys. The
+env is streamed source → destination without being printed, logged, or exposed
+as an output. Useful for seeding an ephemeral app from a base app while dropping
+values that should differ (e.g. datastore URLs).
+
+```yaml
+- uses: beastawakens/action-convox-multi-slim@v3
+  with:
+    action: env-copy
+    rack: my-rack
+    app: base-app                # source
+    destinationApp: my-pr-app     # destination (destinationRack defaults to rack)
+    exclude: "DATABASE_URL REDIS_URL"
 ```
 
 ### promote

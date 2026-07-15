@@ -28,6 +28,12 @@ case "$value" in
   "destroy")
     "$ACTION_DIR/entrypoint-destroy.sh"
     ;;
+  "app-param")
+    "$ACTION_DIR/entrypoint-app-param.sh"
+    ;;
+  "env-copy")
+    "$ACTION_DIR/entrypoint-env-copy.sh"
+    ;;
   "env-set")
     "$ACTION_DIR/entrypoint-env-set.sh"
     ;;

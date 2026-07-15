@@ -21,7 +21,9 @@ teardown() {
 # ---------------------------------------------------------------------------
 
 @test "dispatcher routes create to convox apps create" {
-  stub_convox 'exit 0'
+  # create is idempotent: it only runs `apps create` when `apps info` shows the
+  # app is absent, so the stub must report the app as not found.
+  stub_convox 'if [ "$1 $2" = "apps info" ]; then exit 1; fi; exit 0'
   export INPUT_ACTION="create"
   export INPUT_APP="my-app"
   export INPUT_RACK="my-rack"
@@ -493,4 +495,162 @@ exit 1'
   [ "$status" -eq 0 ]
   grep -q "BUILD=" "$GITHUB_OUTPUT"
   ! grep -q "BUILD=" "$GITHUB_ENV"
+}
+
+# ---------------------------------------------------------------------------
+# entrypoint-create.sh — idempotent create + CREATED output
+# ---------------------------------------------------------------------------
+
+@test "create: creates the app and reports CREATED=true when it is absent" {
+  stub_convox 'if [ "$1 $2" = "apps info" ]; then exit 1; fi; exit 0'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-create.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "^apps create my-app" "$CONVOX_CALLS"
+  grep -q "^CREATED=true$" "$GITHUB_OUTPUT"
+}
+
+@test "create: skips creation and reports CREATED=false when the app exists" {
+  stub_convox 'if [ "$1 $2" = "apps info" ]; then exit 0; fi; exit 0'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-create.sh
+
+  [ "$status" -eq 0 ]
+  ! grep -q "^apps create" "$CONVOX_CALLS"
+  grep -q "^CREATED=false$" "$GITHUB_OUTPUT"
+}
+
+# ---------------------------------------------------------------------------
+# entrypoint-destroy.sh — idempotent destroy + DESTROYED output
+# ---------------------------------------------------------------------------
+
+@test "destroy: deletes the app with --wait and reports DESTROYED=true when it exists" {
+  stub_convox 'if [ "$1 $2" = "apps info" ]; then exit 0; fi; exit 0'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-destroy.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "^apps delete my-app --rack my-rack --wait$" "$CONVOX_CALLS"
+  grep -q "^DESTROYED=true$" "$GITHUB_OUTPUT"
+}
+
+@test "destroy: is a no-op reporting DESTROYED=false when the app is absent" {
+  stub_convox 'if [ "$1 $2" = "apps info" ]; then exit 1; fi; exit 0'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-destroy.sh
+
+  [ "$status" -eq 0 ]
+  ! grep -q "^apps delete" "$CONVOX_CALLS"
+  grep -q "^DESTROYED=false$" "$GITHUB_OUTPUT"
+}
+
+# ---------------------------------------------------------------------------
+# entrypoint-app-param.sh
+# ---------------------------------------------------------------------------
+
+@test "dispatcher routes app-param to convox apps params set" {
+  stub_convox 'exit 0'
+  export INPUT_ACTION="app-param"
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_PARAMS="BuildCpu=2000 BuildMem=4096"
+
+  run sh entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "apps params set BuildCpu=2000 BuildMem=4096 -a my-app --rack my-rack" "$CONVOX_CALLS"
+}
+
+@test "app-param: newline-separated form keeps a spaced value as one argument" {
+  stub_convox 'echo "argc=$#" >> "$CONVOX_CALLS"'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_PARAMS="$(printf 'BuildCpu=2000\nBuildLabels=convox.io/label=platform tier=spot')"
+
+  run sh entrypoint-app-param.sh
+
+  [ "$status" -eq 0 ]
+  # argv is: apps params set BuildCpu=2000 "BuildLabels=..." -a my-app --rack my-rack = 9 args
+  grep -q "^argc=9$" "$CONVOX_CALLS"
+  grep -F -q "BuildLabels=convox.io/label=platform tier=spot" "$CONVOX_CALLS"
+}
+
+# ---------------------------------------------------------------------------
+# entrypoint-env-copy.sh
+# ---------------------------------------------------------------------------
+
+# convox env (read) prints three vars; convox env set records its stdin so the
+# test can assert which vars were copied through.
+stub_env_copy() {
+  export ENV_SET_STDIN="$BATS_TEST_TMPDIR/env-set-stdin"
+  stub_convox '
+if [ "$1" = "env" ] && [ "$2" = "set" ]; then cat >> "$ENV_SET_STDIN"; exit 0; fi
+if [ "$1" = "env" ]; then printf "A=1\nSANDBOX_DATABASE_URL=postgres://secret\nB=2\n"; exit 0; fi
+exit 0'
+}
+
+@test "env-copy: copies all vars when no exclude is given" {
+  stub_env_copy
+  export INPUT_APP="source-app"
+  export INPUT_DESTINATIONAPP="dest-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-env-copy.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "^A=1$" "$ENV_SET_STDIN"
+  grep -q "^SANDBOX_DATABASE_URL=" "$ENV_SET_STDIN"
+  grep -q "^B=2$" "$ENV_SET_STDIN"
+}
+
+@test "env-copy: drops excluded keys" {
+  stub_env_copy
+  export INPUT_APP="source-app"
+  export INPUT_DESTINATIONAPP="dest-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_EXCLUDE="SANDBOX_DATABASE_URL"
+
+  run sh entrypoint-env-copy.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "^A=1$" "$ENV_SET_STDIN"
+  grep -q "^B=2$" "$ENV_SET_STDIN"
+  ! grep -q "^SANDBOX_DATABASE_URL=" "$ENV_SET_STDIN"
+}
+
+@test "env-copy: fails when the source app has no env" {
+  stub_convox '
+if [ "$1" = "env" ] && [ "$2" = "set" ]; then cat > /dev/null; exit 0; fi
+if [ "$1" = "env" ]; then exit 0; fi
+exit 0'
+  export INPUT_APP="source-app"
+  export INPUT_DESTINATIONAPP="dest-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint-env-copy.sh
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"No environment retrieved"* ]]
+}
+
+@test "dispatcher routes env-copy to entrypoint-env-copy.sh" {
+  stub_env_copy
+  export INPUT_ACTION="env-copy"
+  export INPUT_APP="source-app"
+  export INPUT_DESTINATIONAPP="dest-app"
+  export INPUT_RACK="my-rack"
+
+  run sh entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  grep -q "^A=1$" "$ENV_SET_STDIN"
 }

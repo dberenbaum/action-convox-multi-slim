@@ -6,9 +6,10 @@ color: blue
 inputs:
   action:
     description: >-
-      Convox command to run. One of: build, build-migrate, create, deploy,
-      destroy, env-set, find-build, find-release, get-scale, get-rack-param,
-      login, login-user, promote, rack-param, rollback, run, scale
+      Convox command to run. One of: app-param, build, build-migrate, create,
+      deploy, destroy, env-copy, env-set, find-build, find-release, get-scale,
+      get-rack-param, login, login-user, promote, rack-param, rollback, run,
+      scale
     required: true
   password:
     description: Convox deploy key value
@@ -58,10 +59,21 @@ inputs:
     description: The number of instances to scale to
   env:
     description: Environment variables in the form 'key1=value1 key2=value2', or newline-separated pairs when values contain spaces
+  exclude:
+    description: (env-copy) Space- or newline-separated list of env var names to omit when copying from the source app
+    required: false
+  params:
+    description: (app-param) App parameters to set in the form 'Key1=value1 Key2=value2', or newline-separated pairs when values contain spaces
 outputs:
   BUILD:
     description: Build ID of the build matching the description
     value: ${{ steps.convox-action.outputs.BUILD }}
+  CREATED:
+    description: (create) "true" if the app was created by this step, "false" if it already existed
+    value: ${{ steps.convox-action.outputs.CREATED }}
+  DESTROYED:
+    description: (destroy) "true" if the app was deleted by this step, "false" if it did not exist
+    value: ${{ steps.convox-action.outputs.DESTROYED }}
   RELEASE:
     description: Release ID of the created build
     value: ${{ steps.convox-action.outputs.RELEASE }}
