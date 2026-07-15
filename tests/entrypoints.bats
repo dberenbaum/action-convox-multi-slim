@@ -654,3 +654,19 @@ exit 0'
   [ "$status" -eq 0 ]
   grep -q "^A=1$" "$ENV_SET_STDIN"
 }
+
+# ---------------------------------------------------------------------------
+# action.yml wiring — guards against declaring an input but forgetting to map
+# it into the run step's env: block (the entrypoint reads INPUT_<UPPER>).
+# ---------------------------------------------------------------------------
+
+@test "action.yml: every declared input is mapped to an INPUT_* env var" {
+  inputs=$(awk '/^inputs:/{f=1;next} /^[a-zA-Z]/{f=0} f && /^  [a-zA-Z]/{sub(/:.*/,"",$1); print $1}' action.yml)
+  [ -n "$inputs" ]  # sanity: we found some inputs
+  missing=""
+  for name in $inputs; do
+    upper=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
+    grep -q "INPUT_${upper}:" action.yml || missing="$missing $name"
+  done
+  [ -z "$missing" ] || { echo "inputs declared but not wired to INPUT_* env:$missing"; false; }
+}
