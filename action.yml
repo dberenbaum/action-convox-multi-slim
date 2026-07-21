@@ -41,6 +41,11 @@ inputs:
     description: Build the image locally and push directly to the rack registry, bypassing the load balancer upload
     required: false
     default: false
+  buildArgs:
+    description: >-
+      (build) Docker build args in the form 'KEY1=VALUE1 KEY2=VALUE2', or
+      newline-separated pairs. Each is passed to convox build as --build-args.
+    required: false
   manifest:
     description: Use a custom path for your convox.yml
     required: false
@@ -145,6 +150,7 @@ runs:
         INPUT_CACHED: ${{ inputs.cached }}
         INPUT_ERRORONZEROSCALE: ${{ inputs.errorOnZeroScale }}
         INPUT_EXTERNAL: ${{ inputs.external }}
+        INPUT_BUILDARGS: ${{ inputs.buildArgs }}
         INPUT_MANIFEST: ${{ inputs.manifest }}
         INPUT_PARAMNAME: ${{ inputs.paramName }}
         INPUT_PARAMVALUE: ${{ inputs.paramValue }}

@@ -120,7 +120,12 @@ Builds the app and returns the release ID.
     cached: true          # optional, default true
     external: false       # optional, default false
     manifest: convox.yml  # optional
+    buildArgs: FOO=1 BAR=2  # optional; each pair becomes a --build-args flag
 ```
+
+`buildArgs` accepts space- or newline-separated `KEY=VALUE` pairs (values with
+spaces are not supported). Use it to pass Docker `ARG` values into the build,
+e.g. `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MYPKG=1.2.3`.
 
 ### deploy
 
@@ -134,6 +139,7 @@ Builds and deploys in a single operation (waits for completion).
     app: my-app
     description: "Deploy ${{ github.sha }}"
     external: false       # optional, default false
+    buildArgs: FOO=1 BAR=2  # optional; same format as build
 ```
 
 ### build-migrate

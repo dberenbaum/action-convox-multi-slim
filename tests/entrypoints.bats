@@ -467,6 +467,39 @@ exit 1'
   grep -q -- "--external" "$CONVOX_CALLS"
 }
 
+@test "build: each buildArgs pair is passed as a separate --build-args flag" {
+  # argc assertion proves both pairs arrive as separate --build-args flags.
+  stub_convox 'echo "argc=$#" >> "$CONVOX_CALLS"; echo R123'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="test-desc"
+  export INPUT_BUILDARGS="FOO=1 BAR=2"
+
+  run sh entrypoint-build.sh
+
+  [ "$status" -eq 0 ]
+  # argv: build --app my-app --description test-desc --id --build-args FOO=1 --build-args BAR=2 = 10
+  grep -q "^argc=10$" "$CONVOX_CALLS"
+  grep -F -q "FOO=1" "$CONVOX_CALLS"
+  grep -F -q "BAR=2" "$CONVOX_CALLS"
+}
+
+@test "deploy: each buildArgs pair is passed as a separate --build-args flag" {
+  stub_convox 'echo "argc=$#" >> "$CONVOX_CALLS"'
+  export INPUT_APP="my-app"
+  export INPUT_RACK="my-rack"
+  export INPUT_DESCRIPTION="test-desc"
+  export INPUT_BUILDARGS="FOO=1 BAR=2"
+
+  run sh entrypoint-deploy.sh
+
+  [ "$status" -eq 0 ]
+  # argv: deploy --app my-app --description test-desc --build-args FOO=1 --build-args BAR=2 --wait = 10
+  grep -q "^argc=10$" "$CONVOX_CALLS"
+  grep -F -q "FOO=1" "$CONVOX_CALLS"
+  grep -F -q "BAR=2" "$CONVOX_CALLS"
+}
+
 # ---------------------------------------------------------------------------
 # GITHUB_OUTPUT / GITHUB_ENV channel split (plan 009)
 # ---------------------------------------------------------------------------

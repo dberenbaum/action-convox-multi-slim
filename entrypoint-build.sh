@@ -13,6 +13,20 @@ if [ "$INPUT_CACHED" = "false" ]; then set -- "$@" --no-cache; fi
 if [ -n "$INPUT_MANIFEST" ]; then set -- "$@" -m "$INPUT_MANIFEST"; fi
 if [ "$INPUT_EXTERNAL" = "true" ]; then set -- "$@" --external; fi
 
+# Append --build-args for each KEY=VALUE in INPUT_BUILDARGS (space- or
+# newline-separated). ponytail: values with spaces aren't supported; use
+# newline-separated env-style parsing if a build arg ever needs one.
+if [ -n "$INPUT_BUILDARGS" ]; then
+  old_ifs="$IFS"
+  IFS="$(printf ' \n\t')"
+  set -f
+  for pair in $INPUT_BUILDARGS; do
+    [ -n "$pair" ] && set -- "$@" --build-args "$pair"
+  done
+  set +f
+  IFS="$old_ifs"
+fi
+
 release=$(convox build "$@")
 
 if [ -z "$release" ]; then
